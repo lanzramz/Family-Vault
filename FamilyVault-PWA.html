@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Family Vault">
+<meta name="theme-color" content="#8B9E7A">
+<meta name="description" content="Family Milestone & Document Vault">
+
+<!-- PWA Manifest inline via JS blob -->
+<title>Family Vault</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --cream: #FAF8F4;
+    --cream-dark: #EDE9E0;
+    --sage: #8B9E7A;
+    --sage-dark: #6A7D5B;
+    --sage-light: #E8EEE4;
+    --gold: #C4956A;
+    --gold-light: #F5EBE0;
+    --gold-pale: #FDF8F3;
+    --ink: #2C2A26;
+    --ink-light: #6B6760;
+    --ink-faint: #A8A49E;
+    --white: #FFFFFF;
+    --purple: #8A7AAF;
+    --purple-light: #EEE8F8;
+    --error: #D97B7B;
+    --error-bg: #FDF0F0;
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+
+  #app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--cream);
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* STATUS BAR AREA */
+  .status-bar {
+    height: calc(44px + var(--safe-top));
+    padding-top: var(--safe-top);
+    background: rgba(250,248,244,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--cream-dark);
+    flex-shrink: 0;
+    z-index: 50;
+  }
+
+  .status-bar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+
+  /* SCROLL AREA */
+  .page-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  .page-scroll::-webkit-scrollbar { display: none; }
+
+  /* TAB BAR */
+  .tab-bar {
+    flex-shrink: 0;
+    background: rgba(250,248,244,0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--cream-dark);
+    display: flex;
+    padding-bottom: var(--safe-bottom);
+    padding-top: 8px;
+    z-index: 100;
+  }
+
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 0 8px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--ink-faint);
+    transition: color 0.2s;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .tab-item.active { color: var(--sage); }
+
+  .tab-icon {
+    font-size: 24px;
+    line-height: 1;
+    transition: transform 0.2s;
+  }
+
+  .tab-item.active .tab-icon {
+    transform: scale(1.1);
+  }
+
+  .tab-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .tab-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--sage);
+    margin-top: -2px;
+  }
+
+  /* PAGES */
+  .page { padding: 16px 16px 20px; animation: pageFade 0.25s ease; }
+
+  @keyframes pageFade {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 2px 16px rgba(44,42,38,0.06);
+    border: 1px solid var(--cream-dark);
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 14px;
+  }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .section-title em {
+    font-style: italic;
+  }
+
+  /* PILLS */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .btn:active { transform: scale(0.96); }
+
+  .btn-sage { background: var(--sage); color: white; }
+  .btn-gold { background: var(--gold); color: white; }
+  .btn-purple { background: var(--purple); color: white; }
+  .btn-ghost { background: var(--cream-dark); color: var(--ink-light); }
+
+  /* FILTER PILLS ROW */
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 18px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-row::-webkit-scrollbar { display: none; }
+
+  .filter-pill {
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    background: var(--cream-dark);
+    color: var(--ink-light);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .filter-pill.active { background: var(--sage); color: white; }
+  .filter-pill.active-gold { background: var(--gold); color: white; }
+
+  /* TIMELINE */
+  .timeline-wrap { position: relative; padding-left: 8px; }
+  .timeline-line {
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--sage-light), transparent);
+    border-radius: 2px;
+  }
+
+  .timeline-item { display: flex; gap: 12px; margin-bottom: 16px; }
+
+  .timeline-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--sage);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    z-index: 1;
+    box-shadow: 0 0 0 4px var(--sage-light);
+    margin-top: 2px;
+  }
+
+  .timeline-card {
+    flex: 1;
+    background: white;
+    border-radius: 16px;
+    padding: 13px 14px;
+    box-shadow: 0 2px 12px rgba(44,42,38,0.06);
+    border: 1px solid var(--cream-dark);
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(44,42,38,0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .modal-sheet {
+    background: white;
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-width: 430px;
+    padding: 8px 20px calc(32px + var(--safe-bottom));
+    max-height: 88vh;
+    overflow-y: auto;
+    animation: sheetUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-sheet::-webkit-scrollbar { display: none; }
+
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--cream-dark);
+    border-radius: 2px;
+    margin: 8px auto 16px;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 21px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  .modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--cream-dark);
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--ink-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* FORMS */
+  .form-group { margin-bottom: 14px; }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-light);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    border-radius: 12px;
+    border: 1.5px solid var(--cream-dark);
+    padding: 11px 13px;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--sage);
+  }
+
+  .form-textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+  /* DOCUMENT CARD */
+  .doc-card {
+    background: white;
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 10px rgba(44,42,38,0.05);
+    border: 1px solid var(--cream-dark);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+  }
+
+  .doc-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  /* LETTER CARD */
+  .letter-card {
+    background: white;
+    border-radius: 18px;
+    padding: 16px;
+    border: 1px solid var(--cream-dark);
+    box-shadow: 0 2px 12px rgba(44,42,38,0.05);
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: transform 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .letter-card:active { transform: scale(0.98); }
+
+  /* QUICK ACTION GRID */
+  .qa-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .qa-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 16px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: transform 0.15s;
+    text-align: left;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .qa-btn:active { transform: scale(0.96); }
+
+  /* COUNTDOWN ITEM */
+  .countdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--cream-dark);
+  }
+
+  .countdown-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .countdown-item:first-child { padding-top: 0; }
+
+  .countdown-badge {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: var(--sage-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .countdown-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--sage);
+    line-height: 1;
+  }
+
+  .countdown-unit {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--sage-dark);
+    text-transform: uppercase;
+  }
+
+  /* MEMORY CARD */
+  .memory-card {
+    background: linear-gradient(135deg, var(--gold-pale), #FFF9F5);
+    border: 1px solid #EDE0D4;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+
+  /* FAMILY GRID */
+  .family-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .family-member-card {
+    background: var(--cream);
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 16px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--cream-dark);
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--purple), #C4829A);
+    transition: width 1s ease;
+  }
+
+  /* EXPIRY ALERT */
+  .expiry-alert {
+    background: #FDF8EC;
+    border: 1.5px solid #E8D4A0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+
+  /* INSTALL BANNER */
+  .install-banner {
+    background: linear-gradient(135deg, var(--sage), var(--sage-dark));
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: calc(80px + var(--safe-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 300;
+    opacity: 0;
+    transition: all 0.3s;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="status-bar">
+    <div class="status-bar-title" id="statusTitle">🌿 Family Vault</div>
+  </div>
+  <div class="page-scroll" id="pageScroll">
+    <div id="pageContent"></div>
+  </div>
+  <nav class="tab-bar" id="tabBar"></nav>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── PWA MANIFEST ────────────────────────────────────────────────────────────
+(function() {
+  const manifest = {
+    name: "Family Vault",
+    short_name: "Family Vault",
+    description: "Family Milestone & Document Vault",
+    start_url: "./",
+    display: "standalone",
+    background_color: "#FAF8F4",
+    theme_color: "#8B9E7A",
+    orientation: "portrait",
+    icons: [
+      { src: generateIcon(192), sizes: "192x192", type: "image/png", purpose: "any maskable" },
+      { src: generateIcon(512), sizes: "512x512", type: "image/png", purpose: "any maskable" }
+    ]
+  };
+
+  function generateIcon(size) {
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const ctx = c.getContext('2d');
+    const g = ctx.createLinearGradient(0, 0, size, size);
+    g.addColorStop(0, '#8B9E7A');
+    g.addColorStop(1, '#6A7D5B');
+    ctx.fillStyle = g;
+    const r = size * 0.22;
+    ctx.beginPath();
+    ctx.moveTo(r, 0);
+    ctx.lineTo(size - r, 0);
+    ctx.quadraticCurveTo(size, 0, size, r);
+    ctx.lineTo(size, size - r);
+    ctx.quadraticCurveTo(size, size, size - r, size);
+    ctx.lineTo(r, size);
+    ctx.quadraticCurveTo(0, size, 0, size - r);
+    ctx.lineTo(0, r);
+    ctx.quadraticCurveTo(0, 0, r, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillRect(0, 0, size, size * 0.4);
+    ctx.fillStyle = 'white';
+    ctx.font = `bold ${size * 0.42}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🌿', size / 2, size / 2);
+    return c.toDataURL('image/png');
+  }
+
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = url;
+  document.head.appendChild(link);
+
+  // Apple touch icon
+  const iconUrl = generateIcon(180);
+  const iconLink = document.createElement('link');
+  iconLink.rel = 'apple-touch-icon';
+  iconLink.href = iconUrl;
+  document.head.appendChild(iconLink);
+})();
+
+// ─── SERVICE WORKER ───────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'family-vault-v1';
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html'])));
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
+      self.clients.claim();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./index.html'))));
+    });
+  `;
+  const swBlob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+
+// ─── DATABASE ─────────────────────────────────────────────────────────────────
+const DB = {
+  family: [
+    { id: 'all', name: 'All', avatar: '🏠', color: '#8B9E7A' },
+    { id: 'nanay', name: 'Nanay', avatar: '👩', color: '#C4956A' },
+    { id: 'tatay', name: 'Tatay', avatar: '👨', color: '#7A8FAF' },
+    { id: 'yael', name: 'Yael', avatar: '👧', color: '#C4829A' },
+    { id: 'kyle', name: 'Kyle', avatar: '👦', color: '#8A9E7A' },
+  ],
+  events: [
+    { id: 1, type: 'birthday', member: 'yael', label: "Yael's Birthday", date: '2026-04-15' },
+    { id: 2, type: 'anniversary', member: 'all', label: 'Wedding Anniversary', date: '2026-05-22' },
+    { id: 3, type: 'birthday', member: 'kyle', label: "Kyle's Birthday", date: '2026-06-10' },
+    { id: 4, type: 'birthday', member: 'nanay', label: "Nanay's Birthday", date: '2026-08-03' },
+    { id: 5, type: 'birthday', member: 'tatay', label: "Tatay's Birthday", date: '2026-09-18' },
+  ],
+  milestones: [
+    { id: 1, member: 'yael', category: 'growth', title: 'First Steps', date: '2022-03-12', note: 'Took 3 wobbly steps toward Tatay in the living room.', emoji: '👣' },
+    { id: 2, member: 'yael', category: 'spiritual', title: 'Baby Dedication', date: '2022-06-05', note: 'Dedicated at Grace Community Church. Pastor Dan prayed over her.', emoji: '🕊️' },
+    { id: 3, member: 'yael', category: 'education', title: 'First Day of School', date: '2024-06-03', note: 'Wore the pink backpack, didn\'t cry at all!', emoji: '🎒' },
+    { id: 4, member: 'kyle', category: 'spiritual', title: 'First Bible', date: '2023-12-25', note: 'Received his illustrated children\'s Bible as a Christmas gift.', emoji: '📖' },
+    { id: 5, member: 'kyle', category: 'growth', title: 'First Word', date: '2023-02-14', note: 'Said "Mama" on Valentine\'s Day. Best gift ever!', emoji: '💬' },
+    { id: 6, member: 'nanay', category: 'education', title: 'Nursing Board Exam Passed', date: '2015-09-18', note: 'After months of review — she did it!', emoji: '🏆' },
+    { id: 7, member: 'tatay', category: 'growth', title: "Got his Driver's License", date: '2018-04-21', note: "Third try's the charm 😄", emoji: '🚗' },
+    { id: 8, member: 'all', category: 'family', title: 'Moved to New Home', date: '2023-07-01', note: 'Finally! Keys to 123 Maple Lane.', emoji: '🏡' },
+    { id: 9, member: 'yael', category: 'spiritual', title: 'Memorized First Bible Verse', date: '2025-01-10', note: '"For God so loved the world..." — John 3:16. We were all in tears.', emoji: '✝️' },
+    { id: 10, member: 'kyle', category: 'growth', title: 'First Haircut', date: '2023-08-05', note: 'Sat so still! Nanay kept the little curl.', emoji: '✂️' },
+  ],
+  documents: [
+    { id: 1, member: 'yael', category: 'health', title: 'Immunization Record', date: '2024-01-15', expires: null },
+    { id: 2, member: 'nanay', category: 'legal', title: 'Passport', date: '2020-03-01', expires: '2030-03-01' },
+    { id: 3, member: 'tatay', category: 'legal', title: 'Passport', date: '2019-07-14', expires: '2027-02-10' },
+    { id: 4, member: 'yael', category: 'education', title: 'Kinder Report Card', date: '2025-03-22', expires: null },
+    { id: 5, member: 'kyle', category: 'health', title: 'Birth Certificate', date: '2023-01-20', expires: null },
+    { id: 6, member: 'all', category: 'legal', title: 'Marriage Certificate', date: '2018-05-22', expires: null },
+    { id: 7, member: 'tatay', category: 'legal', title: 'Work Visa', date: '2024-01-01', expires: '2026-06-30' },
+    { id: 8, member: 'nanay', category: 'health', title: 'Annual Physical Exam', date: '2025-02-10', expires: '2026-02-10' },
+    { id: 9, member: 'yael', category: 'health', title: 'Dental Record', date: '2025-05-20', expires: null },
+  ],
+  letters: [
+    { id: 1, to: 'yael', from: 'Nanay', subject: 'For Your 18th Birthday', body: 'My dearest Yael, by the time you read this, you are eighteen — a young woman full of light and purpose. I want you to know that every prayer I ever whispered was for you. You were my bravest yes to God.', unlocksAt: '2040-04-15' },
+    { id: 2, to: 'kyle', from: 'Tatay', subject: 'When You Graduate College', body: 'Son, I am so proud of you. This letter has waited years to reach you. Whatever you choose to build with your life — build it with love, integrity, and faith. I will always be your biggest fan.', unlocksAt: '2044-06-10' },
+    { id: 3, to: 'yael', from: 'Tatay', subject: 'On Your Graduation Day', body: 'You did it, anak. This letter has sat in a vault since you were just four years old. Know that your Tatay has always believed you would reach this day.', unlocksAt: '2042-03-01' },
+  ],
+  memories: [
+    { id: 1, member: 'yael', title: "Yael's First Laugh", date: '2022-01-20', note: 'She burst out laughing at the dog — the whole house filled up.', emoji: '😂' },
+    { id: 2, member: 'kyle', title: "Kyle's Bubble Bath Chaos", date: '2023-11-05', note: 'Bubbles everywhere. He looked like a tiny Santa Claus.', emoji: '🛁' },
+    { id: 3, member: 'all', title: 'Family Beach Trip', date: '2024-04-20', note: 'Boracay — four sunburns, one perfect sunset, zero regrets.', emoji: '🌅' },
+    { id: 4, member: 'nanay', title: "Nanay's Surprise Birthday", date: '2023-08-03', note: 'The kids decorated the whole living room with papel picado. She cried happy tears.', emoji: '🎉' },
+  ]
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let state = {
+  activeTab: 'dashboard',
+  milestoneFilter: 'all',
+  vaultFilter: 'all',
+  milestones: [...DB.milestones],
+  documents: [...DB.documents],
+  letters: [...DB.letters],
+  modal: null, // { type, data }
+};
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function daysUntil(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const t = new Date(dateStr); t.setFullYear(today.getFullYear());
+  if (t < today) t.setFullYear(today.getFullYear() + 1);
+  return Math.ceil((t - today) / 86400000);
+}
+
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+}
+
+function fmtDateShort(d) {
+  return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+
+function getMember(id) { return DB.family.find(m => m.id === id) || DB.family[0]; }
+
+function expiryStatus(exp) {
+  if (!exp) return null;
+  const days = Math.ceil((new Date(exp) - new Date()) / 86400000);
+  if (days < 0) return { label: 'Expired', color: '#D97B7B', bg: '#FDF0F0' };
+  if (days <= 90) return { label: `Expires in ${days}d`, color: '#C49B4A', bg: '#FDF8EC' };
+  return { label: `Valid · ${new Date(exp).getFullYear()}`, color: '#8B9E7A', bg: '#F0F4EE' };
+}
+
+function isUnlocked(l) { return new Date(l.unlocksAt) <= new Date(); }
+
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good Morning' : h < 18 ? 'Good Afternoon' : 'Good Evening';
+}
+
+function todayMemory() {
+  return DB.memories[Math.floor(Date.now() / 86400000) % DB.memories.length];
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── CAT CONFIG ───────────────────────────────────────────────────────────────
+const catCfg = {
+  growth:   { bg: '#E8EEE4', color: '#6A7D5B', label: 'Growth' },
+  spiritual:{ bg: '#EEE8F8', color: '#7A6AAF', label: '✝ Spiritual' },
+  education:{ bg: '#E8F4FD', color: '#4A7FA8', label: 'Education' },
+  family:   { bg: '#F5EBE0', color: '#C4956A', label: 'Family' },
+  health:   { bg: '#E8EEE4', color: '#6A7D5B' },
+  legal:    { bg: '#F5EBE0', color: '#C4956A' },
+};
+
+const catIcon = { health: '💊', education: '📚', legal: '🪪', family: '🏠' };
+
+// ─── RENDER ENGINE ────────────────────────────────────────────────────────────
+function render() {
+  renderNav();
+  renderPage();
+  renderModal();
+}
+
+function renderNav() {
+  const tabs = [
+    { id: 'dashboard', icon: '⊙', label: 'Home' },
+    { id: 'milestones', icon: '✦', label: 'Milestones' },
+    { id: 'vault', icon: '◫', label: 'Vault' },
+    { id: 'letters', icon: '✉', label: 'Letters' },
+  ];
+  const titles = { dashboard: '🌿 Family Vault', milestones: '✦ Milestones', vault: '◫ Document Vault', letters: '✉ Letter Box' };
+  document.getElementById('statusTitle').textContent = titles[state.activeTab];
+  document.getElementById('tabBar').innerHTML = tabs.map(t => `
+    <button class="tab-item ${state.activeTab === t.id ? 'active' : ''}" onclick="navigate('${t.id}')">
+      <span class="tab-icon">${t.icon}</span>
+      <span class="tab-label">${t.label}</span>
+      ${state.activeTab === t.id ? '<span class="tab-dot"></span>' : ''}
+    </button>
+  `).join('');
+}
+
+function navigate(tab) {
+  state.activeTab = tab;
+  document.getElementById('pageScroll').scrollTop = 0;
+  render();
+}
+
+function renderPage() {
+  const pages = { dashboard: dashboardPage, milestones: milestonesPage, vault: vaultPage, letters: lettersPage };
+  document.getElementById('pageContent').innerHTML = pages[state.activeTab]();
+  attachPageEvents();
+}
+
+// ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
+function dashboardPage() {
+  const mem = todayMemory();
+  const upcoming = DB.events.map(e => ({ ...e, days: daysUntil(e.date) })).sort((a,b) => a.days - b.days).slice(0,4);
+  const today = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+
+  return `<div class="page">
+    <!-- Greeting -->
+    <div style="margin-bottom:22px">
+      <p style="font-size:11px;color:var(--ink-faint);letter-spacing:0.1em;text-transform:uppercase;font-weight:600;margin-bottom:4px">${today}</p>
+      <h1 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--ink);line-height:1.2">
+        ${greeting()}, <em style="color:var(--sage);font-style:italic">Family</em> 🌿
+      </h1>
+    </div>
+
+    <!-- Install hint (iOS) -->
+    ${/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone ? `
+    <div class="install-banner">
+      <span style="font-size:28px">📲</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:white;margin-bottom:2px">Add to Home Screen</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.85);line-height:1.4">Tap <strong>Share ⬆</strong> then <strong>Add to Home Screen</strong> to install this app</div>
+      </div>
+    </div>` : ''}
+
+    <!-- Memory of the Day -->
+    <div class="memory-card">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+        <span style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;color:var(--gold)">✦ Memory of the Day</span>
+      </div>
+      <div style="font-size:38px;margin-bottom:8px">${mem.emoji}</div>
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:400;color:var(--ink);margin-bottom:6px">${mem.title}</h3>
+      <p style="font-size:13px;color:var(--ink-light);line-height:1.6;margin-bottom:8px">${mem.note}</p>
+      <span style="font-size:11px;color:var(--ink-faint)">${fmtDate(mem.date)}</span>
+    </div>
+
+    <!-- Days Until -->
+    <div class="card">
+      <div class="card-title">📅 Days Until</div>
+      ${upcoming.map(ev => {
+        const m = getMember(ev.member);
+        const emoji = ev.type === 'birthday' ? '🎂' : '💍';
+        return `<div class="countdown-item">
+          <div class="countdown-badge">
+            <span class="countdown-num">${ev.days}</span>
+            <span class="countdown-unit">days</span>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:var(--ink)">${emoji} ${ev.label}</div>
+            <div style="font-size:11px;color:var(--ink-faint)">${fmtDateShort(ev.date)}</div>
+          </div>
+          <span style="font-size:22px">${m.avatar}</span>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+      <div class="card-title">⚡ Quick Actions</div>
+      <div class="qa-grid">
+        <button class="qa-btn" style="background:var(--sage-light)" onclick="navigate('milestones')">
+          <span style="font-size:24px">✦</span>
+          <span style="font-size:12px;font-weight:700;color:var(--sage-dark)">Log Milestone</span>
+        </button>
+        <button class="qa-btn" style="background:var(--gold-light)" onclick="navigate('vault')">
+          <span style="font-size:24px">◫</span>
+          <span style="font-size:12px;font-weight:700;color:var(--gold)">Upload Document</span>
+        </button>
+        <button class="qa-btn" style="background:var(--purple-light)" onclick="navigate('letters')">
+          <span style="font-size:24px">✉</span>
+          <span style="font-size:12px;font-weight:700;color:var(--purple)">Write Letter</span>
+        </button>
+        <button class="qa-btn" style="background:var(--cream-dark)" onclick="showFamilyModal()">
+          <span style="font-size:24px">👨‍👩‍👧‍👦</span>
+          <span style="font-size:12px;font-weight:700;color:var(--ink-light)">Our Family</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Family Overview -->
+    <div class="card">
+      <div class="card-title">👨‍👩‍👧‍👦 The Family</div>
+      <div class="family-grid">
+        ${DB.family.filter(m => m.id !== 'all').map(m => {
+          const ms = state.milestones.filter(x => x.member === m.id).length;
+          const docs = state.documents.filter(x => x.member === m.id).length;
+          return `<div class="family-member-card">
+            <div style="font-size:30px;margin-bottom:6px">${m.avatar}</div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px">${m.name}</div>
+            <div style="font-size:11px;color:var(--ink-faint)">${ms} milestone${ms !== 1 ? 's' : ''}</div>
+            <div style="font-size:11px;color:var(--ink-faint)">${docs} document${docs !== 1 ? 's' : ''}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── MILESTONES PAGE ─────────────────────────────────────────────────────────
+function milestonesPage() {
+  const filtered = state.milestones
+    .filter(m => state.milestoneFilter === 'all' || m.member === state.milestoneFilter)
+    .sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  return `<div class="page">
+    <div class="section-header">
+      <h1 class="section-title">Milestone <em style="color:var(--sage)">Timeline</em></h1>
+      <button class="btn btn-sage" onclick="openModal('addMilestone')">+ Add</button>
+    </div>
+
+    <div class="filter-row">
+      ${DB.family.map(m => `
+        <button class="filter-pill ${state.milestoneFilter === m.id ? 'active' : ''}"
+          onclick="setMilestoneFilter('${m.id}')">
+          ${m.avatar} ${m.name}
+        </button>
+      `).join('')}
+    </div>
+
+    <div class="timeline-wrap">
+      <div class="timeline-line"></div>
+      ${filtered.length === 0 ? `<div style="text-align:center;padding:40px 0;color:var(--ink-faint);font-size:14px">No milestones found.<br>Tap + Add to create one!</div>` : ''}
+      ${filtered.map(ms => {
+        const cat = catCfg[ms.category] || catCfg.growth;
+        const m = getMember(ms.member);
+        return `<div class="timeline-item">
+          <div class="timeline-dot">${ms.emoji}</div>
+          <div class="timeline-card">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px">
+              <h3 style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.3;flex:1">${ms.title}</h3>
+              <span class="pill" style="background:${cat.bg};color:${cat.color};flex-shrink:0">${cat.label}</span>
+            </div>
+            <p style="font-size:13px;color:var(--ink-light);line-height:1.5;margin-bottom:8px">${ms.note}</p>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:11px;color:var(--ink-faint)">${fmtDateShort(ms.date)}</span>
+              <span style="font-size:18px">${m.avatar}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+// ─── VAULT PAGE ───────────────────────────────────────────────────────────────
+function vaultPage() {
+  const expiringDocs = state.documents.filter(d => {
+    if (!d.expires) return false;
+    return Math.ceil((new Date(d.expires) - new Date()) / 86400000) <= 180;
+  });
+
+  const filtered = state.documents
+    .filter(d => state.vaultFilter === 'all' || d.category === state.vaultFilter)
+    .sort((a,b) => {
+      const aD = a.expires ? new Date(a.expires) - new Date() : Infinity;
+      const bD = b.expires ? new Date(b.expires) - new Date() : Infinity;
+      return aD - bD;
+    });
+
+  const cats = [
+    { id:'all', label:'All', icon:'◫' },
+    { id:'health', label:'Health', icon:'💊' },
+    { id:'education', label:'Education', icon:'📚' },
+    { id:'legal', label:'Legal', icon:'🪪' },
+  ];
+
+  return `<div class="page">
+    <div class="section-header">
+      <h1 class="section-title">Document <em style="color:var(--gold)">Vault</em></h1>
+      <button class="btn btn-gold" onclick="openModal('addDocument')">+ Upload</button>
+    </div>
+
+    ${expiringDocs.length ? `
+    <div class="expiry-alert">
+      <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase">⚠ Expiry Alerts</div>
+      ${expiringDocs.map(d => {
+        const days = Math.ceil((new Date(d.expires) - new Date()) / 86400000);
+        const m = getMember(d.member);
+        return `<div style="font-size:13px;color:var(--ink-light);margin-bottom:3px">
+          ${m.avatar} ${d.title} — <strong style="color:${days < 0 ? 'var(--error)' : '#C49B4A'}">${days < 0 ? 'EXPIRED' : days + 'd left'}</strong>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <div class="filter-row">
+      ${cats.map(c => `
+        <button class="filter-pill ${state.vaultFilter === c.id ? 'active-gold active' : ''}"
+          onclick="setVaultFilter('${c.id}')">
+          ${c.icon} ${c.label}
+        </button>
+      `).join('')}
+    </div>
+
+    ${filtered.length === 0 ? `<div style="text-align:center;padding:40px 0;color:var(--ink-faint);font-size:14px">No documents found.</div>` : ''}
+
+    ${filtered.map(doc => {
+      const m = getMember(doc.member);
+      const status = expiryStatus(doc.expires);
+      const icon = catIcon[doc.category] || '📄';
+      const iconBg = doc.category === 'health' ? 'var(--sage-light)' : doc.category === 'education' ? '#E8F4FD' : 'var(--gold-light)';
+      return `<div class="doc-card">
+        <div class="doc-icon" style="background:${iconBg}">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${doc.title}</div>
+          <div style="font-size:11px;color:var(--ink-faint);margin-bottom:5px">${m.avatar} ${m.name} · ${fmtDateShort(doc.date)}</div>
+          ${status ? `<span class="pill" style="background:${status.bg};color:${status.color}">${status.label}</span>` : '<span class="pill" style="background:var(--sage-light);color:var(--sage-dark)">✓ Valid</span>'}
+        </div>
+        <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px" onclick="showToast('Document viewer coming soon!')">View</button>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ─── LETTERS PAGE ─────────────────────────────────────────────────────────────
+function lettersPage() {
+  return `<div class="page">
+    <div class="section-header">
+      <h1 class="section-title">Legacy <em style="color:var(--purple)">Letters</em></h1>
+      <button class="btn btn-purple" onclick="openModal('composeLetter')">✉ Write</button>
+    </div>
+
+    <p style="font-size:13px;color:var(--ink-faint);line-height:1.7;margin-bottom:20px">
+      Words sealed in time — they unlock on the date you choose. Messages that travel across years.
+    </p>
+
+    ${state.letters.map(l => {
+      const unlocked = isUnlocked(l);
+      const toM = getMember(l.to);
+      const daysLeft = Math.ceil((new Date(l.unlocksAt) - new Date()) / 86400000);
+      const progress = Math.max(0, Math.min(100, 100 - (daysLeft / 3650) * 100));
+
+      return `<div class="letter-card" style="border-left:4px solid ${unlocked ? 'var(--purple)' : 'var(--cream-dark)'}"
+        onclick="${unlocked ? `openModal('viewLetter',${l.id})` : "showToast('This letter is still sealed 🔒')"}">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="width:44px;height:44px;border-radius:12px;background:${unlocked ? 'var(--purple-light)' : 'var(--cream-dark)'};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">
+            ${unlocked ? '✉' : '🔒'}
+          </div>
+          <div style="flex:1">
+            <div style="font-family:'Playfair Display',serif;font-size:15px;color:var(--ink);margin-bottom:4px">${l.subject}</div>
+            <div style="font-size:12px;color:var(--ink-faint);margin-bottom:8px">
+              From <strong style="color:var(--ink-light)">${l.from}</strong> → ${toM.avatar} <strong style="color:${toM.color || 'var(--ink-light)'}">${l.to}</strong>
+            </div>
+            ${unlocked
+              ? `<span class="pill" style="background:var(--purple-light);color:var(--purple)">✓ Unlocked · Tap to read</span>`
+              : `<div>
+                  <span class="pill" style="background:var(--cream-dark);color:var(--ink-faint)">🔒 Unlocks ${fmtDateShort(l.unlocksAt)}</span>
+                  <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+                  <div style="font-size:10px;color:var(--ink-faint);margin-top:4px">${daysLeft > 0 ? daysLeft.toLocaleString() + ' days to go' : 'Ready to open'}</div>
+                </div>`
+            }
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+
+    ${state.letters.length === 0 ? '<div style="text-align:center;padding:60px 0;color:var(--ink-faint)">No letters yet.<br>Write your first time-locked letter.</div>' : ''}
+  </div>`;
+}
+
+// ─── MODAL SYSTEM ─────────────────────────────────────────────────────────────
+function openModal(type, id) {
+  state.modal = { type, id };
+  renderModal();
+}
+
+function closeModal() {
+  state.modal = null;
+  renderModal();
+}
+
+function renderModal() {
+  const existing = document.getElementById('modalOverlay');
+  if (existing) existing.remove();
+  if (!state.modal) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modalOverlay';
+  overlay.onclick = e => { if (e.target === overlay) closeModal(); };
+
+  const sheet = document.createElement('div');
+  sheet.className = 'modal-sheet';
+
+  const builders = {
+    addMilestone: buildAddMilestoneModal,
+    addDocument: buildAddDocumentModal,
+    composeLetter: buildComposeLetterModal,
+    viewLetter: buildViewLetterModal,
+    family: buildFamilyModal,
+  };
+
+  sheet.innerHTML = builders[state.modal.type] ? builders[state.modal.type](state.modal.id) : '';
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  attachModalEvents();
+}
+
+function modalHeader(title) {
+  return `<div class="modal-handle"></div>
+  <div class="modal-header">
+    <h2 class="modal-title">${title}</h2>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  </div>`;
+}
+
+function formGroup(label, inputHtml) {
+  return `<div class="form-group"><label class="form-label">${label}</label>${inputHtml}</div>`;
+}
+
+function selectHtml(id, options, value) {
+  return `<select class="form-select" id="${id}">
+    ${options.map(o => `<option value="${o.v}" ${o.v === value ? 'selected' : ''}>${o.l}</option>`).join('')}
+  </select>`;
+}
+
+// ─── MODAL BUILDERS ───────────────────────────────────────────────────────────
+function buildAddMilestoneModal() {
+  const today = new Date().toISOString().split('T')[0];
+  const memberOpts = DB.family.filter(m => m.id !== 'all').map(m => ({ v: m.id, l: `${m.avatar} ${m.name}` }));
+  const catOpts = [
+    { v:'growth', l:'🌱 Growth' }, { v:'spiritual', l:'✝ Spiritual' },
+    { v:'education', l:'📚 Education' }, { v:'family', l:'🏡 Family' },
+  ];
+  return `${modalHeader('Add Milestone')}
+    ${formGroup('Family Member', selectHtml('ms-member', memberOpts, 'yael'))}
+    ${formGroup('Category', selectHtml('ms-cat', catOpts, 'growth'))}
+    ${formGroup('Title', `<input class="form-input" id="ms-title" placeholder="e.g. First Steps">`)}
+    ${formGroup('Date', `<input class="form-input" id="ms-date" type="date" value="${today}">`)}
+    ${formGroup('Emoji', `<input class="form-input" id="ms-emoji" placeholder="🌟" maxlength="4" value="🌟" style="font-size:22px">`)}
+    ${formGroup('Note / Story', `<textarea class="form-textarea" id="ms-note" placeholder="What happened? How did everyone react?"></textarea>`)}
+    <button class="btn btn-sage" style="width:100%;justify-content:center;padding:13px" onclick="saveMilestone()">✦ Save Milestone</button>`;
+}
+
+function buildAddDocumentModal() {
+  const today = new Date().toISOString().split('T')[0];
+  const memberOpts = DB.family.filter(m => m.id !== 'all').map(m => ({ v: m.id, l: `${m.avatar} ${m.name}` }));
+  const catOpts = [{ v:'health', l:'💊 Health' }, { v:'education', l:'📚 Education' }, { v:'legal', l:'🪪 Legal' }];
+  return `${modalHeader('Add Document')}
+    ${formGroup('Family Member', selectHtml('doc-member', memberOpts, 'yael'))}
+    ${formGroup('Category', selectHtml('doc-cat', catOpts, 'health'))}
+    ${formGroup('Document Title', `<input class="form-input" id="doc-title" placeholder="e.g. Passport, Report Card">`)}
+    ${formGroup('Issue Date', `<input class="form-input" id="doc-date" type="date" value="${today}">`)}
+    ${formGroup('Expiry Date (optional)', `<input class="form-input" id="doc-expires" type="date">`)}
+    <div style="background:var(--cream-dark);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:24px">📎</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink)">Attach File</div>
+        <div style="font-size:11px;color:var(--ink-faint)">PDF, JPG, PNG (coming in v2)</div>
+      </div>
+    </div>
+    <button class="btn btn-gold" style="width:100%;justify-content:center;padding:13px" onclick="saveDocument()">◫ Save Document</button>`;
+}
+
+function buildComposeLetterModal() {
+  const memberOpts = DB.family.filter(m => m.id !== 'all').map(m => ({ v: m.id, l: `${m.avatar} ${m.name}` }));
+  const fromOpts = [{ v:'Nanay', l:'👩 Nanay' }, { v:'Tatay', l:'👨 Tatay' }];
+  const future = new Date(); future.setFullYear(future.getFullYear() + 5);
+  const futureStr = future.toISOString().split('T')[0];
+  return `${modalHeader('Write a Letter')}
+    ${formGroup('To', selectHtml('lt-to', memberOpts, 'yael'))}
+    ${formGroup('From', selectHtml('lt-from', fromOpts, 'Nanay'))}
+    ${formGroup('Subject', `<input class="form-input" id="lt-subject" placeholder="For your 18th Birthday...">`)}
+    ${formGroup('Your Message', `<textarea class="form-textarea" id="lt-body" placeholder="Dear one, I want you to know..." style="min-height:140px;font-family:'Playfair Display',serif;font-style:italic"></textarea>`)}
+    ${formGroup('Unlock Date', `<input class="form-input" id="lt-unlock" type="date" value="${futureStr}">`)}
+    <div style="background:var(--purple-light);border-radius:12px;padding:12px;margin-bottom:14px;font-size:12px;color:var(--purple);line-height:1.6">
+      🔒 This letter will be sealed and only readable after the unlock date you choose.
+    </div>
+    <button class="btn btn-purple" style="width:100%;justify-content:center;padding:13px" onclick="saveLetter()">✉ Seal & Save Letter</button>`;
+}
+
+function buildViewLetterModal(id) {
+  const l = state.letters.find(x => x.id === id);
+  if (!l) return '';
+  const toM = getMember(l.to);
+  return `${modalHeader('Letter Unlocked ✉')}
+    <div style="background:var(--purple-light);border-radius:14px;padding:14px;margin-bottom:16px;display:flex;gap:10px;align-items:center">
+      <span style="font-size:28px">💌</span>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:16px;color:var(--ink)">${l.subject}</div>
+        <div style="font-size:11px;color:var(--ink-faint);margin-top:2px">From ${l.from} → ${toM.avatar} ${l.to} · Unlocked ${fmtDateShort(l.unlocksAt)}</div>
+      </div>
+    </div>
+    <div style="background:var(--cream);border-radius:14px;padding:18px;font-family:'Playfair Display',serif;font-style:italic;font-size:15px;color:var(--ink-light);line-height:1.9;min-height:120px">
+      ${l.body || '(No message written yet — it awaits you in silence.)'}
+    </div>`;
+}
+
+function buildFamilyModal() {
+  return `${modalHeader('Our Family')}
+    ${DB.family.filter(m => m.id !== 'all').map(m => {
+      const ms = state.milestones.filter(x => x.member === m.id).length;
+      const docs = state.documents.filter(x => x.member === m.id).length;
+      const letters = state.letters.filter(x => x.to === m.id).length;
+      return `<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--cream-dark)">
+        <div style="font-size:36px;width:50px;text-align:center">${m.avatar}</div>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px">${m.name}</div>
+          <div style="display:flex;gap:12px">
+            <div style="text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--sage)">${ms}</div>
+              <div style="font-size:10px;color:var(--ink-faint);letter-spacing:0.05em">MILESTONES</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--gold)">${docs}</div>
+              <div style="font-size:10px;color:var(--ink-faint);letter-spacing:0.05em">DOCUMENTS</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:18px;font-weight:700;color:var(--purple)">${letters}</div>
+              <div style="font-size:10px;color:var(--ink-faint);letter-spacing:0.05em">LETTERS</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+// ─── SAVE ACTIONS ─────────────────────────────────────────────────────────────
+function saveMilestone() {
+  const title = document.getElementById('ms-title').value.trim();
+  const date = document.getElementById('ms-date').value;
+  if (!title || !date) { showToast('Please fill in title and date'); return; }
+
+  state.milestones.unshift({
+    id: Date.now(),
+    member: document.getElementById('ms-member').value,
+    category: document.getElementById('ms-cat').value,
+    title,
+    date,
+    note: document.getElementById('ms-note').value || '',
+    emoji: document.getElementById('ms-emoji').value || '🌟',
+  });
+  closeModal();
+  showToast('✦ Milestone saved!');
+  renderPage();
+}
+
+function saveDocument() {
+  const title = document.getElementById('doc-title').value.trim();
+  const date = document.getElementById('doc-date').value;
+  if (!title || !date) { showToast('Please fill in title and date'); return; }
+
+  state.documents.push({
+    id: Date.now(),
+    member: document.getElementById('doc-member').value,
+    category: document.getElementById('doc-cat').value,
+    title,
+    date,
+    expires: document.getElementById('doc-expires').value || null,
+  });
+  closeModal();
+  showToast('◫ Document saved!');
+  renderPage();
+}
+
+function saveLetter() {
+  const subject = document.getElementById('lt-subject').value.trim();
+  const unlocksAt = document.getElementById('lt-unlock').value;
+  if (!subject || !unlocksAt) { showToast('Please fill in subject and unlock date'); return; }
+
+  state.letters.push({
+    id: Date.now(),
+    to: document.getElementById('lt-to').value,
+    from: document.getElementById('lt-from').value,
+    subject,
+    body: document.getElementById('lt-body').value,
+    unlocksAt,
+  });
+  closeModal();
+  showToast('✉ Letter sealed!');
+  renderPage();
+}
+
+// ─── EVENT HELPERS ────────────────────────────────────────────────────────────
+function setMilestoneFilter(f) { state.milestoneFilter = f; renderPage(); }
+function setVaultFilter(f) { state.vaultFilter = f; renderPage(); }
+function showFamilyModal() { openModal('family'); }
+
+function attachPageEvents() {} // events are inline onclick
+function attachModalEvents() {} // events are inline onclick
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
